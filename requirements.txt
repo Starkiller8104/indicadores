@@ -1,8 +1,9 @@
 streamlit
-openpyxl
+pandas
 requests
+feedparser
 beautifulsoup4
 lxml
-feedparser
+openpyxl
 pytz
-pandas
+
