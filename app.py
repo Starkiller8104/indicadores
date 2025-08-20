@@ -14,6 +14,48 @@ from bs4 import BeautifulSoup
 from openpyxl import load_workbook
 import streamlit as st
 
+st.set_page_config(page_title="Automatización Indicadores", page_icon="📊", layout="centered")
+
+def _get_app_password() -> str:
+    # 1) Streamlit secrets
+    try:
+        return st.secrets["APP_PASSWORD"]
+    except Exception:
+        pass
+    # 2) Variable de entorno
+    if os.getenv("APP_PASSWORD"):
+        return os.getenv("APP_PASSWORD")
+    # 3) Respaldo (¡cámbiala!)
+    return "Indicadores2025"
+
+def _check_password() -> bool:
+    if "auth_ok" not in st.session_state:
+        st.session_state.auth_ok = False
+
+    def _try_login():
+        pw = st.session_state.get("password_input", "")
+        st.session_state.auth_ok = (pw == _get_app_password())
+        st.session_state.password_input = ""  
+
+    if st.session_state.auth_ok:
+        return True
+
+    st.title("🔒 Acceso restringido")
+    st.text_input("Contraseña", type="password", key="password_input", on_change=_try_login, placeholder="Escribe tu contraseña…")
+    if not st.session_state.auth_ok and st.session_state.get("password_input","") == "":
+        st.caption("Introduce la contraseña para continuar.")
+    elif not st.session_state.auth_ok:
+        st.error("Contraseña incorrecta.")
+    return False
+
+
+if not _check_password():
+    st.stop()
+
+st.sidebar.image("logo.png", width=160)
+st.sidebar.markdown("**Automatización de Indicadores**")
+
+
 TZ_MX = pytz.timezone("America/Mexico_City")
 
 def safe_round(x, n):
@@ -194,7 +236,6 @@ def build_news_bullets(max_items=10):
         bullets.append(f"• {title} — {link}")
     return "\n".join(bullets) if bullets else "Sin novedades (verifica conexión y RSS)."
 
-st.set_page_config(page_title="Automatización Indicadores", page_icon="📊", layout="centered")
 st.title("📊 Automatización de Indicadores de Maricela")
 st.write("Sube tu archivo Excel y generaré el actualizado listo para descargar.")
 
@@ -230,7 +271,6 @@ if do_process:
 
     FECHA_HOY = datetime.now(TZ_MX).strftime("%d/%m/%Y")
 
-
     try:
         fx = sie_opportuno(["SF43718","SF46406","SF46410"], BANXICO_TOKEN)
     except Exception as e:
@@ -243,42 +283,31 @@ if do_process:
     usd_jpy = (usd_mxn / jpy_mxn) if (usd_mxn and jpy_mxn) else None
     eur_usd = (eur_mxn / usd_mxn) if (eur_mxn and usd_mxn) else None
 
-
     monex_compra, monex_venta = monex_compra_venta(usd_fix=usd_mxn)
-
 
     tasa_obj = sie_opportuno(["SF61745"], BANXICO_TOKEN).get("SF61745")
     tiie = fetch_tiie_from_dof()
 
-
     cetes = cetes_sie(BANXICO_TOKEN)
-
 
     udis = sie_opportuno(["SP68257"], BANXICO_TOKEN).get("SP68257")
 
-
     uma_diaria, uma_mensual, uma_anual = fetch_uma_values()
-
 
     if run_news:
         ws_new["A2"] = build_news_bullets(max_items=12)
 
-
     ws_ind["F7"]  = FECHA_HOY
     ws_ind["F10"] = safe_round(usd_mxn, 4)
-
 
     ws_ind["F12"] = safe_round(monex_compra, 4)
     ws_ind["F13"] = safe_round(monex_venta, 4)
 
-
     ws_ind["F16"] = safe_round(jpy_mxn, 6)
     ws_ind["F17"] = safe_round(usd_jpy, 6)
 
-
     ws_ind["F21"] = safe_round(eur_mxn, 6)
     ws_ind["F22"] = safe_round(eur_usd, 6)
-
 
     ws_ind["L7"]  = FECHA_HOY
     ws_ind["L8"]  = safe_round(tasa_obj, 4)
@@ -286,23 +315,19 @@ if do_process:
     ws_ind["L10"] = safe_round(tiie.get("tiie_91"), 4)
     ws_ind["L11"] = safe_round(tiie.get("tiie_182"), 4)
 
-
     ws_ind["L14"] = FECHA_HOY
     ws_ind["L15"] = safe_round(cetes.get("28"), 4)
     ws_ind["L16"] = safe_round(cetes.get("91"), 4)
     ws_ind["L17"] = safe_round(cetes.get("182"), 4)
     ws_ind["L18"] = safe_round(cetes.get("364"), 4)
 
-
     ws_ind["F32"] = FECHA_HOY
     ws_ind["F33"] = safe_round(udis, 6)
-
 
     ws_ind["K32"] = FECHA_HOY
     ws_ind["K33"] = safe_round(uma_diaria, 2)
     ws_ind["K34"] = safe_round(uma_mensual, 2)
     ws_ind["K35"] = safe_round(uma_anual, 2)
-
 
     out = io.BytesIO()
     wb.save(out)
@@ -315,7 +340,6 @@ if do_process:
         file_name=os.path.splitext(uploaded.name)[0] + "_actualizado.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
-
 
     st.subheader("Resumen")
     df_res = pd.DataFrame({
