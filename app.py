@@ -194,12 +194,12 @@ def build_news_bullets(max_items=10):
         bullets.append(f"• {title} — {link}")
     return "\n".join(bullets) if bullets else "Sin novedades (verifica conexión y RSS)."
 
-st.set_page_config(page_title="Automatización Indicadores MX", page_icon="📊", layout="centered")
-st.title("📊 Automatización de Indicadores MX (sin Colab)")
+st.set_page_config(page_title="Automatización Indicadores", page_icon="📊", layout="centered")
+st.title("📊 Automatización de Indicadores de Maricela")
 st.write("Sube tu archivo Excel y generaré el actualizado listo para descargar.")
 
 uploaded = st.file_uploader("Selecciona tu archivo .xlsx", type=["xlsx"])
-run_news = st.checkbox("Poblar hoja 'Noticias' (A2)", value=True)
+run_news = st.checkbox("Indicadores_actualizado", value=True)
 do_process = st.button("Procesar y generar archivo")
 
 if do_process:
